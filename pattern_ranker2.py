@@ -129,8 +129,7 @@ def add_referenz_pattern2result(result_list, pattern_score_referenz):
                 break
     return result_list
 
-def get_metrics():
-    pass
+
 
 
 def get_resultlist(normal_pattern_score, normal_event_graphs, alarm_list):
