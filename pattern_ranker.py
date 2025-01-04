@@ -63,10 +63,31 @@ def get_event_depth_pod(normal_event_graphs, event_pair):
 
     return maxdepth, event_pod
 
+err_ids = [138,
+ 139,
+ 164,
+ 189,
+ 190,
+ 193,
+ 194,
+ 195,
+ 200,
+ 201,
+ 205,
+ 206,
+ 211,
+ 212,
+ 213,
+ 222,
+ 228,
+ 229,
+ 479,
+ 485]
+
 def get_pattern_ranked_dict(pattern_dict_referenz, pattern_dict_fokus, min_score=0.67):
     score_dict = {}
     for key in pattern_dict_fokus.keys():
-        if pattern_dict_fokus[key] > 5:
+        if pattern_dict_fokus[key] > 5 or any([str(err_id) in key.split('_') for err_id in err_ids]):
             if key not in score_dict.keys():
                 score_dict[key] = 0
             if key in pattern_dict_referenz.keys():
@@ -84,7 +105,10 @@ def get_pattern_ranked_dict(pattern_dict_referenz, pattern_dict_fokus, min_score
             # logger.info("move key %s because score %s < 0.66" % (key, value))
             move_list.add(key)
     for item in move_list:
-        score_dict.pop(item)
+        if not any([str(err_id) in item.split('_') for err_id in err_ids]):
+            score_dict.pop(item)
+        else:
+            print("dont pop item:", item)
 
     return score_dict
 

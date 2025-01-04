@@ -89,41 +89,71 @@ def abnormal_pattern_ranker_custom(normal_pattern_dict, abnormal_pattern_dict):
 
 global_abnormal_patterns = {}
 
+err_ids = [138,
+ 139,
+ 164,
+ 189,
+ 190,
+ 193,
+ 194,
+ 195,
+ 200,
+ 201,
+ 205,
+ 206,
+ 211,
+ 212,
+ 213,
+ 222,
+ 228,
+ 229,
+ 479,
+ 485]
+
 def pattern_ranker_custom(pattern_fokus, event_graphs_fokus, pattern_referenz, log_template_miner, alarm_list, topk=10, min_score=0.67, abnormal_time=''):
     pattern_score_dict_referenz = get_pattern_ranked_dict(
         pattern_fokus, pattern_referenz, min_score)
-    pattern_score_dict_referenz = sorted(pattern_score_dict_referenz, reverse=True)
+    pattern_score_dict_referenz = dict(sorted(pattern_score_dict_referenz.items(), key=lambda item: item[1], reverse=True))
     
     pattern_score_dict_fokus = get_pattern_ranked_dict(
         pattern_referenz, pattern_fokus, min_score)
     
     move_list = set()
     for key in pattern_score_dict_fokus.keys():
-        # logger.info("%s %s %s %s" % (key, from_id_to_template(int(key.split("_")[0])), from_id_to_template(
-        #     int(key.split("_")[1])), value))
         # only consider the root of child graph
         log_var = from_id_to_template(int(key.split("_")[1]),log_template_miner)
         if "Cpu" not in log_var and "Network" not in log_var and "Memory" not in log_var:
             for key1 in pattern_score_dict_fokus.keys():
                 if int(key.split("_")[0]) == int(key1.split("_")[1]) and pattern_score_dict_fokus[key] <= pattern_score_dict_fokus[key1]:
-                    # logger.info("move key %s because it has root key %s" %
-                    #             (key, key1))
                     move_list.add(key)
     for item in move_list:
         pattern_score_dict_fokus.pop(item)
+
         
-    result_list = get_resultlist(pattern_score_dict_fokus, event_graphs_fokus, alarm_list)[:10]
+    result_list = get_resultlist(pattern_score_dict_fokus, event_graphs_fokus, alarm_list)
+    
+    if len(result_list) > 10:
+        i = 0
+        reduced_result_list = []
+        for i in range(len(result_list)):
+            if i <10:
+                reduced_result_list.append(result_list[i])
+            else:
+                if any([str(err_id) in result_list[i]['events'].split('_') for err_id in err_ids]):
+                    reduced_result_list.append(result_list[i])  
+                    print("keep err event pattern:", result_list[i])
+        result_list = reduced_result_list
     
     result_list = add_referenz_pattern2result(result_list, pattern_score_dict_referenz)
     
     return result_list
 
 
-def add_referenz_pattern2result(result_list, pattern_score_referenz):
+def add_referenz_pattern2result(result_list, pattern_score_dict_referenz):
     result_len = len(result_list)
     
     for i in range(result_len):
-        for item in pattern_score_referenz:
+        for item in pattern_score_dict_referenz.keys():
             if result_list[i]["events"].split("_")[0] == item.split("_")[0] and result_list[i]["events"].split("_")[1] != item.split("_")[1]:
                 result_list[i]["events_inreferenz"] = item
                 break
